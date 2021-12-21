@@ -34,9 +34,9 @@ public abstract class BaseDbContext : IdentityDbContext<ApplicationUser, Applica
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
         modelBuilder.ApplyIdentityConfiguration(_tenantService);
-        modelBuilder.ApplyGlobalFilters<IMustHaveTenant>(b => EF.Property<string>(b, nameof(Tenant)) == Tenant);
+        modelBuilder.ApplyGlobalFilters<IMustHaveTenant>(b => EF.Property<string>(b, nameof(Tenant)) == Tenant); //includes only records of tenant
         modelBuilder.ApplyGlobalFilters<IIdentityTenant>(b => EF.Property<string>(b, nameof(Tenant)) == Tenant);
-        modelBuilder.ApplyGlobalFilters<ISoftDelete>(s => s.DeletedOn == null);
+        modelBuilder.ApplyGlobalFilters<ISoftDelete>(s => s.DeletedOn == null); //excludes soft deleted records
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -78,9 +78,9 @@ public abstract class BaseDbContext : IdentityDbContext<ApplicationUser, Applica
         }
 
         var currentUserId = _currentUserService.GetUserId();
-        var auditEntries = OnBeforeSaveChanges(currentUserId);
+        var auditEntries = OnBeforeSaveChanges(currentUserId); //audit trail business
         int result = await base.SaveChangesAsync(cancellationToken);
-        await OnAfterSaveChangesAsync(auditEntries, cancellationToken);
+        await OnAfterSaveChangesAsync(auditEntries, cancellationToken); //audit trail business
         return result;
     }
 

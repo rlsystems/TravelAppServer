@@ -31,10 +31,11 @@ public class ProductService : IProductService
     public async Task<Result<Guid>> CreateProductAsync(CreateProductRequest request)
     {
         bool productExists = await _repository.ExistsAsync<Product>(a => a.Name == request.Name);
-        if (productExists) throw new EntityAlreadyExistsException(string.Format(_localizer["product.alreadyexists"], request.Name));
+        if (productExists) throw new EntityAlreadyExistsException(string.Format(_localizer["product.alreadyexists"], request.Name)); //check if already exists
         bool brandExists = await _repository.ExistsAsync<Brand>(a => a.Id == request.BrandId);
-        if (!brandExists) throw new EntityNotFoundException(string.Format(_localizer["brand.notfound"], request.BrandId));
+        if (!brandExists) throw new EntityNotFoundException(string.Format(_localizer["brand.notfound"], request.BrandId)); //check that brand is found
         string productImagePath = await _file.UploadAsync<Product>(request.Image, FileType.Image);
+        
         var product = new Product(request.Name, request.Description, request.Rate, request.BrandId, productImagePath);
 
         // Add Domain Events to be raised after the commit

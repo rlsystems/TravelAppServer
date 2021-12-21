@@ -27,11 +27,12 @@ public class ApplicationDbContext : BaseDbContext
 
     public DbSet<Product> Products { get; set; }
     public DbSet<Brand> Brands { get; set; }
+    public DbSet<Property> Properties { get; set; }
 
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
     {
         var currentUserId = _currentUserService.GetUserId();
-        foreach (var entry in ChangeTracker.Entries<IAuditableEntity>().ToList())
+        foreach (var entry in ChangeTracker.Entries<IAuditableEntity>().ToList()) //for each thing being changed of type Iaudit,
         {
             switch (entry.State)
             {
@@ -46,19 +47,21 @@ public class ApplicationDbContext : BaseDbContext
                     break;
 
                 case EntityState.Deleted:
-                    if (entry.Entity is ISoftDelete softDelete)
+                    if (entry.Entity is ISoftDelete softDelete) //intercept delete requests, add user/time, forward as modified
                     {
                         softDelete.DeletedBy = currentUserId;
                         softDelete.DeletedOn = DateTime.UtcNow;
-                        entry.State = EntityState.Modified;
+                        entry.State = EntityState.Modified; //handle as modify (not delete)
                     }
 
                     break;
             }
         }
 
-        int results = await base.SaveChangesAsync(cancellationToken);
-        if (_eventService == null) return results;
+        int results = await base.SaveChangesAsync(cancellationToken); //baseDbContext, adds tenant and audit trails
+        if (_eventService == null) return results; 
+
+        //logging business
         var entitiesWithEvents = ChangeTracker.Entries<BaseEntity>()
                                                 .Select(e => e.Entity)
                                                 .Where(e => e.DomainEvents.Count > 0)

@@ -75,10 +75,11 @@ public class RepositoryAsync : IRepositoryAsync
             if (specification != null)
                 query = query.Specify(specification);
             var entity = await query.Where(a => a.Id == entityId).FirstOrDefaultAsync(cancellationToken: cancellationToken);
-            var dto = entity.Adapt<TDto>();
+
+            var dto = entity.Adapt<TDto>(); //some automapping (Mapster)
             if (dto != null)
             {
-                if ((specification?.Includes?.Count == 0) || specification == null)
+                if ((specification?.Includes?.Count == 0) || specification == null) //cache business
                 {
                     var options = new DistributedCacheEntryOptions();
                     byte[] serializedData = Encoding.Default.GetBytes(_serializer.Serialize(dto));
@@ -148,7 +149,7 @@ public class RepositoryAsync : IRepositoryAsync
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        return _dbContext.SaveChangesAsync(cancellationToken);
+        return _dbContext.SaveChangesAsync(cancellationToken); //overrides default save, add current user, modified date, etc, audit stuff
     }
 
     public async Task<int> GetCountAsync<T>(Expression<Func<T, bool>> expression = null, CancellationToken cancellationToken = default)
